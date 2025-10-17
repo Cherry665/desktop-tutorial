@@ -139,12 +139,45 @@ echo "line_count:$line_count"
 ```
 ## 可以运行的bash代码⑥:
 计算 ufasta.fa 文件中所有序列长度的总和  
+以下为perl语言：  
+• ^：匹配行首  
+• total：匹配文字"total"  
+• \t：匹配制表符  
+• (\d+)：匹配一个或多个数字，并用括号捕获（保存到$1）  
+• print $1：打印正则表达式中第一个括号捕获的内容（即数字部分）
 ```
 total=$(faops count ufasta.fa | perl -ne '/^total\t(\d+)/ and print $1')
 echo "total:$total"
 ```
 ## bats代码⑦:
 ```
+@test "faCount: without cpg" {
+    if ! hash faCount 2>/dev/null ; then
+        skip "Can't find faCount"
+    fi
 
+    exp=$(faCount $BATS_TEST_DIRNAME/ufasta.fa | perl -anle 'print join qq{\t}, @F[0 .. 6]')
+    res=$($BATS_TEST_DIRNAME/../faops count $BATS_TEST_DIRNAME/ufasta.fa)
+    assert_equal "$exp" "$res"
+}
 ```
 ## 可以运行的bash代码⑦:
+对比 faops count 和 facount 的输出结果是否一致  
+• -a：自动分割模式，将每行按空白分割到 @F 数组  
+• -n：逐行处理输入  
+• -l：自动处理换行符  
+• @F[0 .. 6]：取数组的前7个元素（第1-7列）  
+• join qq{\t}：用制表符连接这些元素  
+```
+if ! hash faCount 2>/dev/null ; then        
+   echo "Can't find faCount"
+else
+exp=$(faCount ufasta.fa | perl -anle 'print join "\t", @F[0..6]')
+res=$(faops count ufasta.fa)
+   if [ "$exp" = "$res" ]; then
+       echo "The outputs of faops_count and faCount are the same"
+   else
+       echo "The outputs of faops_count and faCount are different"
+   fi
+fi
+```
