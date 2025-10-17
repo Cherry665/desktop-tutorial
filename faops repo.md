@@ -139,7 +139,7 @@ echo "line_count:$line_count"
 ```
 ## 可以运行的bash代码⑥:
 计算 ufasta.fa 文件中所有序列长度的总和  
-以下为perl语言：  
+以下为perl语言解释：  
 • ^：匹配行首  
 • total：匹配文字"total"  
 • \t：匹配制表符  
@@ -163,6 +163,7 @@ echo "total:$total"
 ```
 ## 可以运行的bash代码⑦:
 对比 faops count 和 facount 的输出结果是否一致  
+以下为perl语言解释：  
 • -a：自动分割模式，将每行按空白分割到 @F 数组  
 • -n：逐行处理输入  
 • -l：自动处理换行符  
