@@ -289,6 +289,7 @@ echo "total:$total"
 ## 可以运行的bash代码①:
 `frag`可以提取 ufasta.fa 文件中的序列片段，提取第 1-10 个碱基。`grep -v "^>"`可以删除以“>”开头的行，即描述行  
 ```
+cd $HOME/faops/test
 res=$(faops frag ufasta.fa 1 10 stdout | grep -v "^>")
 echo "The extracted sequence is:$res"
 ```
@@ -305,7 +306,46 @@ echo "The extracted sequence is:$res"
 `some`可以提取指定序列，`<(echo read12)`提供序列名为 read12 的序列，输出到 stdout  
 `frag`可以从 stdin 中提取第 1-10 个碱基，输出到 stdout  
 ```
+cd $HOME/faops/test
 res=$(faops some ufasta.fa <(echo read12) stdout | faops frag stdin 1 10 stdout | grep -v "^>")
 echo "The extracted sequence is:$res"
 ```
 # 05-rc.bats
+## bats代码①:
+```
+@test "rc: output same length" {
+    exp=$($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa)
+    res=$($BATS_TEST_DIRNAME/../faops rc -n $BATS_TEST_DIRNAME/ufasta.fa stdout \
+        | $BATS_TEST_DIRNAME/../faops size stdin)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码①:
+可以验证利用`faops rc -n`得到的反向互补序列与原始序列长度相等
+```
+cd $HOME/faops/test
+exp=$(faops size ufasta.fa)
+res=$(faops rc -n ufasta.fa stdout | faops size stdin)
+#echo "The length of the original sequence:$exp"
+#echo "The length of the reverse complementary sequence:$res"
+if [ "$exp" = "$res" ]; then
+   echo "The length of the reverse complementary sequence is equal to the original sequence"
+else
+   echo "The length of the reverse complementary sequence is unequal to the original sequence"
+fi
+```
+## bats代码②:
+```
+@test "rc: double rc" {
+    exp=$($BATS_TEST_DIRNAME/../faops filter $BATS_TEST_DIRNAME/ufasta.fa stdout)
+    res=$($BATS_TEST_DIRNAME/../faops rc -n $BATS_TEST_DIRNAME/ufasta.fa stdout \
+        | $BATS_TEST_DIRNAME/../faops rc -n stdin stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码②:
+验证双重反向互补操作会恢复原始序列
+```
+cd $HOME/faops/test
+
+```
