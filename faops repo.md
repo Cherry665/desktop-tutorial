@@ -138,7 +138,7 @@ echo "line_count:$line_count"
 }
 ```
 ## 可以运行的bash代码⑥:
-计算 ufasta.fa 文件中所有序列长度的总和  
+计算 ufasta.fa 文件中所有序列长度的总和（count）  
 以下为perl语言解释：  
 • ^：匹配行首  
 • total：匹配文字"total"  
@@ -146,6 +146,7 @@ echo "line_count:$line_count"
 • (\d+)：匹配一个或多个数字，并用括号捕获（保存到$1）  
 • print $1：打印正则表达式中第一个括号捕获的内容（即数字部分）
 ```
+cd $HOME/faops/test
 total=$(faops count ufasta.fa | perl -ne '/^total\t(\d+)/ and print $1')
 echo "total:$total"
 ```
@@ -181,4 +182,94 @@ res=$(faops count ufasta.fa)
        echo "The outputs of faops_count and faCount are different"
    fi
 fi
+```
+# 03-size.bats  
+## bats代码①:
+```
+@test "size: read from file" {
+    run bash -c "$BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa | head -n 2"
+    assert_equal "read0${tab}359" "${lines[0]}"
+    assert_equal "read1${tab}106" "${lines[1]}"
+}
+```
+## 可以运行的bash代码①:
+计算 ufasta.fa 文件中序列的长度（只输出前两条）  
+```
+cd $HOME/faops/test
+faops size ufasta.fa | head -n 2
+```
+## bats代码②:
+```
+@test "size: read from gzipped file" {
+    run bash -c "$BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa.gz | head -n 2"
+    assert_equal "read0${tab}359" "${lines[0]}"
+    assert_equal "read1${tab}106" "${lines[1]}"
+}
+```
+## 可以运行的bash代码②:
+计算 ufasta.fa.gz 压缩文件中序列的长度，与①类似  
+```
+cd $HOME/faops/test
+faops size ufasta.fa.gz | head -n 2
+```
+## bats代码③:
+```
+@test "size: read from stdin" {
+    run bash -c "cat $BATS_TEST_DIRNAME/ufasta.fa | $BATS_TEST_DIRNAME/../faops size stdin | head -n 2"
+    assert_equal "read0${tab}359" "${lines[0]}"
+    assert_equal "read1${tab}106" "${lines[1]}"
+}
+```
+## 可以运行的bash代码③:
+先从 ufasta.fa 文件中读取内容传输给 stdin（标准输入），后从 stdin 中读取内容，计算序列的长度  
+```
+cd $HOME/faops/test
+cat ufasta.fa | faops size stdin | head -n 2
+```
+## bats代码④:
+```
+@test "size: lines of result" {
+    run $BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | wc -l | xargs echo "
+    assert_equal 50 "${output}"
+}
+```
+## 可以运行的bash代码④:
+计算 faops size ufasta.fa 输出结果的行数，与 count 不同的是没有表头和total  
+```
+cd $HOME/faops/test
+line_count=$(echo "$(faops size ufasta.fa)" | wc -l | xargs echo)
+echo "line_count:$line_count"
+```
+## bats代码⑤:
+```
+@test "size: mixture of stdin and actual file" {
+    run bash -c "cat $BATS_TEST_DIRNAME/ufasta.fa | $BATS_TEST_DIRNAME/../faops size stdin $BATS_TEST_DIRNAME/ufasta.fa"
+    run bash -c "echo \"${output}\" | wc -l | xargs echo "
+    assert_equal 100 "${output}"
+}
+```
+## 可以运行的bash代码⑤:
+利用 faops size 同时处理 stdin（标准输入）和原文件，计算两者行数的总和  
+```
+cd $HOME/faops/test
+line_count=$(echo "$(cat ufasta.fa | faops size stdin ufasta.fa)" | wc -l | xargs echo)
+echo "line_count:$line_count"
+```
+## bats代码⑥:
+```
+@test "size: sum of sizes" {
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa \
+            | perl -ane '\$c += \$F[1]; END { print qq{\$c\n} }'
+    "
+    assert_equal 9317 "${output}"
+}
+```
+## 可以运行的bash代码⑥:
+计算 ufasta.fa 文件中所有序列长度的总和（size）  
+```
+cd $HOME/faops/test
+total=$(faops size ufasta.fa | perl -ane '$c += $F[1]; END { print qq{$c\n} }')
+echo "total:$total"
 ```
