@@ -268,8 +268,44 @@ echo "line_count:$line_count"
 ```
 ## 可以运行的bash代码⑥:
 计算 ufasta.fa 文件中所有序列长度的总和（size）  
+• -a：自动分割模式，将每行按空白分割到 @F 数组  
+• -n：逐行处理输入  
+• -e：执行后面的 Perl 代码  
+• \$c += \$F[1]：累加第二列（序列长度）的值  
+• END { print qq{\$c\n} }：处理完所有行后打印累加结果  
 ```
 cd $HOME/faops/test
 total=$(faops size ufasta.fa | perl -ane '$c += $F[1]; END { print qq{$c\n} }')
 echo "total:$total"
 ```
+# 04-frag.bats
+## bats代码①:
+```
+@test "frag: from first sequence" {
+    res=$($BATS_TEST_DIRNAME/../faops frag $BATS_TEST_DIRNAME/ufasta.fa 1 10 stdout | grep -v "^>")
+    assert_equal "tCGTTTAACC" "${res}"
+}
+```
+## 可以运行的bash代码①:
+`frag`可以提取 ufasta.fa 文件中的序列片段，提取第 1-10 个碱基。`grep -v "^>"`可以删除以“>”开头的行，即描述行  
+```
+res=$(faops frag ufasta.fa 1 10 stdout | grep -v "^>")
+echo "The extracted sequence is:$res"
+```
+## bats代码②:
+```
+@test "frag: from specified sequence" {
+    res=$($BATS_TEST_DIRNAME/../faops some $BATS_TEST_DIRNAME/ufasta.fa <(echo read12) stdout \
+        | $BATS_TEST_DIRNAME/../faops frag stdin 1 10 stdout \
+        | grep -v "^>")
+    assert_equal "AGCgCcccaa" "${res}"
+}
+```
+## 可以运行的bash代码②:
+`some`可以提取指定序列，`<(echo read12)`提供序列名为 read12 的序列，输出到 stdout  
+`frag`可以从 stdin 中提取第 1-10 个碱基，输出到 stdout  
+```
+res=$(faops some ufasta.fa <(echo read12) stdout | faops frag stdin 1 10 stdout | grep -v "^>")
+echo "The extracted sequence is:$res"
+```
+# 05-rc.bats
