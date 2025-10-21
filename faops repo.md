@@ -344,8 +344,63 @@ fi
 }
 ```
 ## 可以运行的bash代码②:
-验证双重反向互补操作会恢复原始序列
+验证双重反向互补操作会恢复原始序列（fa文件）  
+`faops filter`用来清理数据格式？  
 ```
 cd $HOME/faops/test
+exp=$(faops filter ufasta.fa stdout)    
+res=$(faops rc -n ufasta.fa stdout | faops rc -n stdin stdout)
+if [ "$exp" = "$res" ]; then   
+   echo "The length of the double reverse complementary sequence is equal to the original sequence"
+else   
+   echo "The length of the double reverse complementary sequence is unequal to the original sequence"
+fi
+```
+## bats代码③:
+```
+@test "rc: double rc (gz)" {
+    exp=$($BATS_TEST_DIRNAME/../faops filter $BATS_TEST_DIRNAME/ufasta.fa stdout)
+    res=$($BATS_TEST_DIRNAME/../faops rc -n $BATS_TEST_DIRNAME/ufasta.fa.gz stdout \
+        | $BATS_TEST_DIRNAME/../faops rc -n stdin stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码③:
+验证双重反向互补操作会恢复原始序列（fa.gz文件）  
+```
+cd $HOME/faops/test
+exp=$(faops filter ufasta.fa stdout)    
+res=$(faops rc -n ufasta.fa.gz stdout | faops rc -n stdin stdout)
+if [ "$exp" = "$res" ]; then      
+   echo "The length of the double reverse complementary sequence is equal to the original sequence"
+else      
+   echo "The length of the double reverse complementary sequence is unequal to the original sequence"
+fi
+```
+## bats代码④:
+```
+@test "rc: perl regex" {
+    paste <($BATS_TEST_DIRNAME/../faops rc -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep -v '^>') \
+        <($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep -v '^>') \
+        | perl -ane '
+            $F[0] = uc($F[0]);
+            $F[1] =~ tr/ACGTacgt/TGCATGCA/;
+            $F[1] = reverse($F[1]);
+            exit(1) unless $F[0] eq $F[1]
+        '
+    assert_success
+}
+```
+## 可以运行的bash代码④:
+
+```
+cd $HOME/faops/test
+paste \
+   <(faops rc -l 0 ufasta.fa stdout | grep -v '^>') \        
+   <(faops filter -l 0 ufasta.fa stdout | grep -v '^>') \        
+| perl -ane '            
+$F[0] = uc($F[0]);            
+$F[1] =~ tr/ACGTacgt/TGCATGCA/;            
+$F[1] = reverse($F[1]);
 
 ```
