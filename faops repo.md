@@ -392,15 +392,105 @@ fi
 }
 ```
 ## 可以运行的bash代码④:
-
+利用perl验证`rc -l`反向互补的正确性  
+• `rc -l 0`可以生成反向互补序列，且无长度限制  
+• `paste`可以将两个命令的输出按列合并，每列包含反向互补序列 + 制表符 + 原始序列  
+• `$F[0] = uc($F[0])`： 将反向互补序列转为大写  
+• `$F[1] =~ tr/ACGTacgt/TGCATGCA/`： 对原始序列进行碱基互补  
+• `$F[1] = reverse($F[1])`: 反转序列  
+• `$F[0] ne $F[1]`: ne 为perl中的不等运算符  
+• `$.`表示当前行号  
+• 退出状态码1表示失败，0表示成功，`eof`判断是否到达文件末尾  
 ```
 cd $HOME/faops/test
 paste \
-   <(faops rc -l 0 ufasta.fa stdout | grep -v '^>') \        
-   <(faops filter -l 0 ufasta.fa stdout | grep -v '^>') \        
-| perl -ane '            
-$F[0] = uc($F[0]);            
-$F[1] =~ tr/ACGTacgt/TGCATGCA/;            
-$F[1] = reverse($F[1]);
+  <(faops rc -l 0 ufasta.fa stdout | grep -v '^>') \
+  <(faops filter -l 0 ufasta.fa stdout | grep -v '^>') \
+| perl -ane '
+    $F[0] = uc($F[0]);
+    $F[1] =~ tr/ACGTacgt/TGCATGCA/;
+    $F[1] = reverse($F[1]);
+    if ($F[0] ne $F[1]) {
+        print "Mismatch at line $.: $F[0] vs $F[1]\n";
+        exit(1);
+    }
+    exit(0) if eof;
+'
+if [ $? -eq 0 ]; then
+    echo "Perl reverse complement algorithm verification successful"
+else
+    echo "Perl reverse complement algorithm verification failed"
+fi
+```
+## bats代码⑤:
+```
+@test "rc: with list.file" {
+    exp=">RC_read47"
+    res=$($BATS_TEST_DIRNAME/../faops rc -l 0 -f <(echo read47) $BATS_TEST_DIRNAME/ufasta.fa stdout | grep '^>RC_')
 
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码⑤:
+利用列表文件对指定序列进行反向互补操作  
+• `-f <(echo read47)`只处理序列“read47”
+```
+cd $HOME/faops/test
+exp=">RC_read47"    
+res=$(faops rc -l 0 -f <(echo read47) ufasta.fa stdout | grep '^>RC_')
+if [ "$exp" = "$res" ];then
+   echo "The reverse complementary sequence was successfully generated using the list file"
+else
+   echo "Failed,exp:$exp;res:$res"
+fi
+```
+# 06-one.bats
+## bats代码①:
+```
+@test "one: inline names" {
+    exp=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep -A 1 '^>read12')
+    res=$($BATS_TEST_DIRNAME/../faops one -l 0 $BATS_TEST_DIRNAME/ufasta.fa read12 stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码①:
+利用`faops one`提取单个指定序列  
+• `grep -A 1`可以显示匹配行及其后面一行内容
+```
+cd $HOME/faops/test
+exp=$(faops filter -l 0 ufasta.fa stdout | grep -A 1 '^>read12')    
+res=$(faops one -l 0 ufasta.fa read12 stdout)
+if [ "$exp" = "$res" ];then   
+   echo "faops one correctly extracts individual sequences"
+else   
+   echo "Failed,exp:$exp;res:$res"
+fi
+```
+## bats代码②:
+```
+@test "faSomeRecords: inline names" {
+    if ! hash faSomeRecords 2>/dev/null ; then
+        skip "Can't find faSomeRecords"
+    fi
+
+    exp=$(faSomeRecords $BATS_TEST_DIRNAME/ufasta.fa <(echo read12) stdout | grep '^>')
+    res=$($BATS_TEST_DIRNAME/../faops one $BATS_TEST_DIRNAME/ufasta.fa read12 stdout | grep '^>')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码②:
+借助faSomeRecords验证`faops one`是否正确提取单个指定序列，与①类似
+```
+cd $HOME/faops/test
+if ! hash faSomeRecords 2>/dev/null ; then           
+   echo "Can't find faSomeRecords"
+else
+exp=$(faSomeRecords ufasta.fa <(echo read12) stdout | grep '^>')
+res=$(faops one ufasta.fa read12 stdout | grep '^>')   
+   if [ "$exp" = "$res" ]; then       
+      echo "The outputs of faops_one and faSomeRecords are the same"   
+   else       
+      echo "The outputs of faops_one and faSomeRecords are different"   
+   fi
+fi
 ```
