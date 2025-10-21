@@ -494,3 +494,19 @@ res=$(faops one ufasta.fa read12 stdout | grep '^>')
    fi
 fi
 ```
+# 07-some.bats
+## bats代码①:
+```
+@test "some: inline names" {
+    exp=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep -A 1 '^>read12')
+    res=$($BATS_TEST_DIRNAME/../faops some -l 0 $BATS_TEST_DIRNAME/ufasta.fa <(echo read12) stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码①:
+
+```
+cd $HOME/faops/test
+exp=$(faops filter -l 0 ufasta.fa stdout | grep -A 1 '^>read12')    
+res=$(faops some -l 0 ufasta.fa <(echo read12) stdout)
+```
