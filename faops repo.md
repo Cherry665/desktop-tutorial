@@ -544,3 +544,50 @@ res=$(faops some ufasta.fa <(echo read12) stdout | grep '^>')
    fi
 fi
 ```
+## bats代码③:
+```
+@test "faSomeRecords: exclude" {
+    if ! hash faSomeRecords 2>/dev/null ; then
+        skip "Can't find faSomeRecords"
+    fi
+
+    exp=$(faSomeRecords -exclude $BATS_TEST_DIRNAME/ufasta.fa <(echo read12) stdout | grep '^>')
+    res=$($BATS_TEST_DIRNAME/../faops some -i $BATS_TEST_DIRNAME/ufasta.fa <(echo read12) stdout | grep '^>')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码③:
+利用`faops some -i`可以排除指定序列，保留剩余序列
+```
+cd $HOME/faops/test
+if ! hash faSomeRecords 2>/dev/null ; then              
+   echo "Can't find faSomeRecords"
+else
+exp=$(faSomeRecords -exclude ufasta.fa <(echo read12) stdout | grep '^>')
+res=$(faops some -i ufasta.fa <(echo read12) stdout | grep '^>')    
+   if [ "$exp" = "$res" ]; then             
+      echo "The outputs of faops_some and faSomeRecords are the same"      
+   else             
+      echo "The outputs of faops_some and faSomeRecords are different"      
+   fi
+fi
+```
+# 08-filter.bats
+## bats代码①:
+```
+@test "filter: as formatter, sequence in one line" {
+    exp=$($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa | wc -l | xargs echo)
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | wc -l | xargs echo)
+    assert_equal "$(( exp * 2 ))" "$res"
+}
+```
+## 可以运行的bash代码①:
+`faops filter -l 0`可以格式化序列，且无换行  
+每个格式化后的序列占两行：1行头信息 + 1行序列数据  
+```
+cd $HOME/faops/test
+exp=$(faops size ufasta.fa | wc -l | xargs echo)    
+res=$(faops filter -l 0 ufasta.fa stdout | wc -l | xargs echo)
+echo "exp:$exp"
+echo "res:$res"
+```
