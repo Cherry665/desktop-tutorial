@@ -638,9 +638,9 @@ fi
 ```
 ## 可以运行的bash代码④:
 使用`faops filter`格式化序列后序列信息不变  
-• `chomp`：移除每行的换行符
-• `print`：连续打印（不移除序列字符间的换行）
-• 可以去除描述行，将所有序列数据连接成一个长字符串
+• `chomp`：移除每行的换行符  
+• `print`：连续打印（不移除序列字符间的换行）  
+• 可以去除描述行，将所有序列数据连接成一个长字符串  
 ```
 cd $HOME/faops/test
 exp=$(grep -v '^>' ufasta.fa | perl -ne 'chomp; print')    
