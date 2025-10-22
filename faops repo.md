@@ -582,7 +582,7 @@ fi
 }
 ```
 ## 可以运行的bash代码①:
-`faops filter -l 0`可以格式化序列，且无换行  
+`faops filter -l 0`可以格式化序列，且每条序列在一行上  
 每个格式化后的序列占两行：1行头信息 + 1行序列数据  
 ```
 cd $HOME/faops/test
@@ -590,4 +590,64 @@ exp=$(faops size ufasta.fa | wc -l | xargs echo)
 res=$(faops filter -l 0 ufasta.fa stdout | wc -l | xargs echo)
 echo "exp:$exp"
 echo "res:$res"
+```
+## bats代码②:
+```
+@test "filter: as formatter, blocked fasta files" {
+    exp=$($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa | wc -l | xargs echo)
+    res=$($BATS_TEST_DIRNAME/../faops filter -b $BATS_TEST_DIRNAME/ufasta.fa stdout | wc -l | xargs echo)
+    assert_equal "$(( exp * 3 ))" "$res"
+}
+```
+## 可以运行的bash代码②:
+`faops filter -b`可以生成分块格式化的fa文件，后每条序列占3行，序列后面有一行空行  
+```
+cd $HOME/faops/test
+exp=$(faops size ufasta.fa | wc -l | xargs echo)    
+res=$(faops filter -b ufasta.fa stdout | wc -l | xargs echo)
+echo "exp:$exp"
+echo "res:$res"
+```
+## bats代码③:
+```
+@test "filter: as formatter, identical headers" {
+    exp=$(grep '^>' $BATS_TEST_DIRNAME/ufasta.fa)
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep '^>')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码③:
+使用`faops filter`格式化序列后描述行信息不变  
+```
+cd $HOME/faops/test
+exp=$(grep '^>' ufasta.fa)    
+res=$(faops filter -l 0 ufasta.fa stdout | grep '^>')
+if [ "$exp" = "$res" ]; then                   
+   echo "The description line information remains unchanged after formatting the sequence"         
+else                   
+   echo "The description line information changes after formatting the sequence"         
+fi
+```
+## bats代码④:
+```
+@test "filter: as formatter, identical sequences" {
+    exp=$(grep -v '^>' $BATS_TEST_DIRNAME/ufasta.fa | perl -ne 'chomp; print')
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep -v '^>' | perl -ne 'chomp; print')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码④:
+使用`faops filter`格式化序列后序列信息不变  
+• `chomp`：移除每行的换行符
+• `print`：连续打印（不移除序列字符间的换行）
+• 可以去除描述行，将所有序列数据连接成一个长字符串
+```
+cd $HOME/faops/test
+exp=$(grep -v '^>' ufasta.fa | perl -ne 'chomp; print')    
+res=$(faops filter -l 0 ufasta.fa stdout | grep -v '^>' | perl -ne 'chomp; print')
+if [ "$exp" = "$res" ]; then                      
+   echo "The sequence information remains unchanged after formatting the sequence"         
+else                      
+   echo "The sequence information changes after formatting the sequence"         
+fi
 ```
