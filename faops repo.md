@@ -504,9 +504,43 @@ fi
 }
 ```
 ## 可以运行的bash代码①:
-
+`faops some`可以用来提取多条指定序列  
+将`<(echo read12)`替换为`<(echo -e "read12\nread13")`可以提取多条序列  
 ```
 cd $HOME/faops/test
 exp=$(faops filter -l 0 ufasta.fa stdout | grep -A 1 '^>read12')    
 res=$(faops some -l 0 ufasta.fa <(echo read12) stdout)
+if [ "$exp" = "$res" ]; then             
+   echo "Faops some correctly extracts sequences"      
+else             
+   echo "Failed,exp：$exp;res:$res"      
+fi
+```
+## bats代码②:
+```
+@test "faSomeRecords: inline names" {
+    if ! hash faSomeRecords 2>/dev/null ; then
+        skip "Can't find faSomeRecords"
+    fi
+
+    exp=$(faSomeRecords $BATS_TEST_DIRNAME/ufasta.fa <(echo read12) stdout | grep '^>')
+    res=$($BATS_TEST_DIRNAME/../faops some $BATS_TEST_DIRNAME/ufasta.fa <(echo read12) stdout | grep '^>')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码②:
+借助faSomeRecords验证`faops some`是否正确提取指定序列，与①类似  
+```
+cd $HOME/faops/test
+if ! hash faSomeRecords 2>/dev/null ; then              
+   echo "Can't find faSomeRecords"
+else
+exp=$(faSomeRecords ufasta.fa <(echo read12) stdout | grep '^>')
+res=$(faops some ufasta.fa <(echo read12) stdout | grep '^>')    
+   if [ "$exp" = "$res" ]; then             
+      echo "The outputs of faops_some and faSomeRecords are the same"      
+   else             
+      echo "The outputs of faops_some and faSomeRecords are different"      
+   fi
+fi
 ```
