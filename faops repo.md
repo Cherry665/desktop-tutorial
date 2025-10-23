@@ -898,3 +898,66 @@ res=$(faops filter -u -a 1 <(cat ufasta.fa ufasta.fa) stdout | grep '^>')
    fi
 fi
 ```
+# 09-split-name.bats  
+## bats代码①:
+```
+@test "split-name: all sequences" {
+    mytmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
+
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops split-name $BATS_TEST_DIRNAME/ufasta.fa $mytmpdir \
+        && find $mytmpdir -name '*.fa' | wc -l | xargs echo
+    "
+    assert_equal 50 "${output}"
+
+    rm -fr ${mytmpdir}
+}
+```
+## 可以运行的bash代码①:
+建立临时目录，将 ufasta.fa 文件中的多个序列按序列名拆分成多个单序列文件  
+```
+cd $HOME/faops/test
+mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+faops split-name ufasta.fa $mytmpdir
+if [ $? -eq 0 ];then
+   echo "Split successfully"
+   ls $mytmpdir
+else
+   echo "Failed"
+fi
+file_count=$(find $mytmpdir -name '*.fa' | wc -l | xargs echo)
+echo "$file_count"
+rm -fr $mytmpdir
+```
+## bats代码②:
+```
+@test "split-name: size restrict" {
+    mytmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
+
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops filter -a 10 $BATS_TEST_DIRNAME/ufasta.fa stdout \
+        | $BATS_TEST_DIRNAME/../faops split-name stdin $mytmpdir \
+        && find $mytmpdir -name '*.fa' | wc -l | xargs echo
+    "
+    assert_equal 44 "${output}"
+
+    rm -fr ${mytmpdir}
+}
+```
+## 可以运行的bash代码②:
+建立临时目录，将 ufasta.fa 文件中长度≥10的多个序列按序列名拆分成多个单序列文件
+```
+cd $HOME/faops/test
+mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+faops filter -a 10 ufasta.fa stdout | faops split-name stdin $mytmpdir
+if [ $? -eq 0 ];then   
+   echo "Split successfully"   
+   ls $mytmpdir
+else   
+   echo "Failed"
+fi
+file_count=$(find $mytmpdir -name '*.fa' | wc -l | xargs echo)
+echo "$file_count"
+rm -fr $mytmpdir
+```
+# 10-split-about.bats
