@@ -767,4 +767,134 @@ fi
 cd $HOME/faops/test
 exp=$(printf ">read\n%s\n" ANNG)    
 res=$(faops filter -l 0 -s <(printf ">read.1\n%s\n" ANNG) stdout)
+echo "exp:$exp; res:$res"
+```
+## bats代码11:
+```
+@test "filter: fastq to fasta" {
+    run $BATS_TEST_DIRNAME/../faops filter $BATS_TEST_DIRNAME/test.seq stdout
+    run bash -c "echo \"${output}\" | wc -l | xargs echo "
+    assert_equal 6 "${output}"
+}
+```
+## 可以运行的bash代码11:
+利用`faops filter`可以将 fastq 格式文件转换为 fasta 格式文件  
+```
+cd $HOME/faops/test
+res=$(faops filter test.seq stdout | wc -l | xargs echo)
+echo "res:$res"
+```
+## bats代码12:
+```
+@test "faFilter: minSize" {
+    if ! hash faFilter 2>/dev/null ; then
+        skip "Can't find faFilter"
+    fi
+
+    exp=$(faFilter -minSize=10 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep '^>')
+    res=$($BATS_TEST_DIRNAME/../faops filter -a 10 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep '^>')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码12:
+利用`faops filter -a 10`可以过滤出长度≥10的序列  
+• `-a`：最小序列长度阈值  
+```
+cd $HOME/faops/test
+if ! hash faFilter 2>/dev/null ; then                 
+   echo "Can't find faFilter"
+else
+exp=$(faFilter -minSize=10 ufasta.fa stdout | grep '^>')
+res=$(faops filter -a 10 ufasta.fa stdout | grep '^>')
+   if [ "$exp" = "$res" ]; then                   
+      echo "faops_filter filters successfully"         
+   else                   
+      echo "Failed"         
+   fi
+fi
+```
+## bats代码13:
+```
+@test "faFilter: maxSize" {
+    if ! hash faFilter 2>/dev/null ; then
+        skip "Can't find faFilter"
+    fi
+
+    exp=$(faFilter -maxSize=50 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep '^>')
+    res=$($BATS_TEST_DIRNAME/../faops filter -a 1 -z 50 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep '^>')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码13:
+利用`faops filter -z 50`可以过滤出长度≤50的序列  
+• `-z`：最大序列长度阈值
+```
+cd $HOME/faops/test
+if ! hash faFilter 2>/dev/null ; then                    
+   echo "Can't find faFilter"
+else
+exp=$(faFilter -maxSize=50 ufasta.fa stdout | grep '^>')
+res=$(faops filter -a 1 -z 50 ufasta.fa stdout | grep '^>')
+   if [ "$exp" = "$res" ]; then                         
+      echo "faops_filter filters successfully"            
+   else                         
+      echo "Failed"            
+   fi
+fi
+```
+## bats代码14:
+```
+@test "faFilter: minSize maxSize" {
+    if ! hash faFilter 2>/dev/null ; then
+        skip "Can't find faFilter"
+    fi
+
+    exp=$(faFilter -minSize=10 -maxSize=50 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep '^>')
+    res=$($BATS_TEST_DIRNAME/../faops filter -a 10 -z 50 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep '^>')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码14:
+利用`faops filter -a 10 -z 50`可以过滤出长度在10和50之间的序列  
+```
+cd $HOME/faops/test
+if ! hash faFilter 2>/dev/null ; then                    
+   echo "Can't find faFilter"
+else
+exp=$(faFilter -minSize=10 -maxSize=50 ufasta.fa stdout | grep '^>')
+res=$(faops filter -a 10 -z 50 ufasta.fa stdout | grep '^>')
+   if [ "$exp" = "$res" ]; then                         
+      echo "faops_filter filters successfully"            
+   else                         
+      echo "Failed"            
+   fi
+fi
+```
+## bats代码15:
+```
+@test "faFilter: uniq" {
+    if ! hash faFilter 2>/dev/null ; then
+        skip "Can't find faFilter"
+    fi
+
+    exp=$(faFilter -uniq <(cat $BATS_TEST_DIRNAME/ufasta.fa $BATS_TEST_DIRNAME/ufasta.fa) stdout | grep '^>')
+    res=$($BATS_TEST_DIRNAME/../faops filter -u -a 1 <(cat $BATS_TEST_DIRNAME/ufasta.fa $BATS_TEST_DIRNAME/ufasta.fa) stdout | grep '^>')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码15:
+利用`faops filter -u`可以去除序列中的重复序列  
+```
+cd $HOME/faops/test
+if ! hash faFilter 2>/dev/null ; then                    
+   echo "Can't find faFilter"
+else
+exp=$(faFilter -uniq <(cat ufasta.fa ufasta.fa) stdout | grep '^>')
+res=$(faops filter -u -a 1 <(cat ufasta.fa ufasta.fa) stdout | grep '^>')
+   if [ "$exp" = "$res" ]; then                         
+      echo "faops_filter filters successfully"            
+   else                         
+      echo "Failed"            
+   fi
+fi
 ```
