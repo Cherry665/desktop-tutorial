@@ -651,3 +651,120 @@ else
    echo "The sequence information changes after formatting the sequence"         
 fi
 ```
+## bats代码⑤:
+```
+@test "filter: as formatter, identical sequences (gz)" {
+    exp=$(grep -v '^>' $BATS_TEST_DIRNAME/ufasta.fa | perl -ne 'chomp; print')
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa.gz stdout | grep -v '^>' | perl -ne 'chomp; print')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码⑤:
+使用`faops filter`格式化 fa.gz 压缩文件的序列后序列信息不变  
+```
+cd $HOME/faops/test
+exp=$(grep -v '^>' ufasta.fa | perl -ne 'chomp; print')    
+res=$(faops filter -l 0 ufasta.fa.gz stdout | grep -v '^>' | perl -ne 'chomp; print')
+if [ "$exp" = "$res" ]; then                      
+   echo "The sequence information remains unchanged after formatting the sequence"         
+else                      
+   echo "The sequence information changes after formatting the sequence"         
+fi
+```
+## bats代码⑥:
+```
+@test "filter: as formatter, identical sequences (gz) with -N" {
+    exp=$(grep -v '^>' $BATS_TEST_DIRNAME/ufasta.fa | perl -ne 'chomp; print')
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 -N $BATS_TEST_DIRNAME/ufasta.fa.gz stdout | grep -v '^>' | perl -ne 'chomp; print')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码⑥:
+`faops filter -l 0 -N`中的`-N`参数可以将所有IUPAC模糊碱基代码（如M、R、S、W、Y、K等）转换为标准的N，保持A、G、C、T不变  
+```
+cd $HOME/faops/test
+exp=$(grep -v '^>' ufasta.fa | perl -ne 'chomp; print')    
+res=$(faops filter -l 0 -N ufasta.fa.gz stdout | grep -v '^>' | perl -ne 'chomp; print')
+if [ "$exp" = "$res" ]; then                      
+   echo "The sequence information remains unchanged after formatting the sequence"         
+else                      
+   echo "The sequence information changes after formatting the sequence"         
+fi
+```
+## bats代码⑦:
+```
+@test "filter: convert IUPAC to N" {
+    exp=$(printf ">read\n%s\n" ANNG)
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 -N <(printf ">read\n%s\n" AMRG) stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码⑦:
+利用`faops filter -l 0 -N`的`-N`参数将所有IUPAC模糊碱基代码（M、R）转换为标准的N  
+M=A/C;R=A/G  
+`<()`可以创建一个临时文件，并传递给 faops 执行，执行完自动删除  
+```
+cd $HOME/faops/test
+exp=$(printf ">read\n%s\n" ANNG)
+res=$(faops filter -l 0 -N <(printf ">read\n%s\n" AMRG) stdout)
+if [ "$exp" = "$res" ]; then                      
+   echo "-N converts successfully"         
+else                      
+   echo "Failed"         
+fi
+```
+## bats代码⑧:
+```
+@test "filter: remove dashes" {
+    exp=$(printf ">read\n%s\n" ARG)
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 -d <(printf ">read\n%s\n" A-RG) stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码⑧:
+`faops filter -l 0 -d`的`-d`参数可以用来删除序列中的破折号（-）  
+```
+cd $HOME/faops/test
+exp=$(printf ">read\n%s\n" ARG)
+res=$(faops filter -l 0 -d <(printf ">read\n%s\n" A-RG) stdout)
+if [ "$exp" = "$res" ]; then                         
+   echo "'-' has been removed successfully"         
+else                         
+   echo "Failed"         
+fi
+```
+## bats代码⑨:
+```
+@test "filter: Upper cases" {
+    exp=$(printf ">read\n%s\n" ATCG)
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 -U <(printf ">read\n%s\n" AtcG) stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码⑨:
+`faops filter -l 0 -U`的`-U`参数可以将序列中的小写字母转换为大写字母  
+```
+cd $HOME/faops/test
+exp=$(printf ">read\n%s\n" ATCG)    
+res=$(faops filter -l 0 -U <(printf ">read\n%s\n" AtcG) stdout)
+if [ "$exp" = "$res" ]; then                         
+   echo "-U converts successfully"         
+else                         
+   echo "Failed"         
+fi
+```
+## bats代码⑩:
+```
+@test "filter: simplify seq names" {
+    exp=$(printf ">read\n%s\n" ANNG)
+    res=$($BATS_TEST_DIRNAME/../faops filter -l 0 -s <(printf ">read.1\n%s\n" ANNG) stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码⑩:
+`faops filter -l 0 -s`的`-s`参数可以简化 FASTA 文件的描述行，移除序列名称中的后缀和额外描述  
+```
+cd $HOME/faops/test
+exp=$(printf ">read\n%s\n" ANNG)    
+res=$(faops filter -l 0 -s <(printf ">read.1\n%s\n" ANNG) stdout)
+```
