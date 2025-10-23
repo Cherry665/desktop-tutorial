@@ -961,3 +961,64 @@ echo "$file_count"
 rm -fr $mytmpdir
 ```
 # 10-split-about.bats
+## bats代码①:
+```
+@test "split-about: 2000 bp " {
+    mytmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
+
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops split-about $BATS_TEST_DIRNAME/ufasta.fa 2000 $mytmpdir \
+        && find $mytmpdir -name '*.fa' | wc -l | xargs echo
+    "
+    assert_equal 5 "${output}"
+
+    rm -fr ${mytmpdir}
+}
+```
+## 可以运行的bash代码①:
+建立临时目录，将 ufasta.fa 文件按每个 2000bp（约等于）拆分成多个包含几个序列的文件（单个序列不会被拆分），输出文件名为000.fa、001.fa......  
+```
+cd $HOME/faops/test
+mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+faops split-about ufasta.fa 2000 $mytmpdir
+if [ $? -eq 0 ];then      
+   echo "Split successfully"      
+   ls $mytmpdir
+else      
+   echo "Failed"
+fi
+file_count=$(find $mytmpdir -name '*.fa' | wc -l | xargs echo)
+echo "$file_count"
+rm -fr $mytmpdir
+```
+## bats代码②:
+```
+@test "split-about: max parts" {
+    mytmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
+
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops split-about -m 2 $BATS_TEST_DIRNAME/ufasta.fa 2000 $mytmpdir \
+        && find $mytmpdir -name '*.fa' | wc -l | xargs echo
+    "
+    assert_equal 2 "${output}"
+
+    rm -fr ${mytmpdir}
+}
+```
+## 可以运行的bash代码②:
+建立临时目录，将 ufasta.fa 文件按每个 2000bp（约等于）拆分成多个包含几个序列的文件（单个序列不会被拆分）  
+• `-m 2`会限制最多拆分文件数量为2，这样每个文件的碱基数量就不是2000，会根据最大文件数量进行调整  
+```
+cd $HOME/faops/test
+mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+faops split-about -m 2 ufasta.fa 2000 $mytmpdir
+if [ $? -eq 0 ];then         
+   echo "Split successfully"         
+   ls $mytmpdir
+else         
+   echo "Failed"
+fi
+file_count=$(find $mytmpdir -name '*.fa' | wc -l | xargs echo)
+echo "$file_count"
+rm -fr $mytmpdir
+```
