@@ -976,7 +976,7 @@ rm -fr $mytmpdir
 }
 ```
 ## 可以运行的bash代码①:
-建立临时目录，将 ufasta.fa 文件按每个 2000bp（约等于）拆分成多个包含几个序列的文件（单个序列不会被拆分），输出文件名为000.fa、001.fa......  
+建立临时目录，利用`faops split-about ufasta.fa 2000 $mytmpdir`将 ufasta.fa 文件按每个 2000bp（约等于）拆分成多个包含几个序列的文件（单个序列不会被拆分），输出文件名为000.fa、001.fa......  
 ```
 cd $HOME/faops/test
 mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
@@ -1012,6 +1012,97 @@ rm -fr $mytmpdir
 cd $HOME/faops/test
 mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
 faops split-about -m 2 ufasta.fa 2000 $mytmpdir
+if [ $? -eq 0 ];then         
+   echo "Split successfully"         
+   ls $mytmpdir
+else         
+   echo "Failed"
+fi
+file_count=$(find $mytmpdir -name '*.fa' | wc -l | xargs echo)
+echo "$file_count"
+rm -fr $mytmpdir
+```
+## bats代码③:
+```
+@test "split-about: 2000 bp and size restrict" {
+    mytmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
+
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops filter -a 100 $BATS_TEST_DIRNAME/ufasta.fa stdout \
+        | $BATS_TEST_DIRNAME/../faops split-about stdin 2000 $mytmpdir \
+        && find $mytmpdir -name '*.fa' | wc -l | xargs echo
+    "
+    assert_equal 4 "${output}"
+
+    rm -fr ${mytmpdir}
+}
+```
+## 可以运行的bash代码③:
+先利用`faops filter -a 100`过滤出长度≥100的序列，再利用`faops split-about`将过滤得到的序列按每个 2000bp 拆分成多个文件  
+```
+cd $HOME/faops/test
+mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+faops filter -a 100 ufasta.fa stdout | faops split-about stdin 2000 $mytmpdir
+if [ $? -eq 0 ];then         
+   echo "Split successfully"         
+   ls $mytmpdir
+else         
+   echo "Failed"
+fi
+file_count=$(find $mytmpdir -name '*.fa' | wc -l | xargs echo)
+echo "$file_count"
+rm -fr $mytmpdir
+```
+## bats代码④:
+```
+@test "split-about: 1 bp" {
+    mytmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
+
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops split-about $BATS_TEST_DIRNAME/ufasta.fa 1 $mytmpdir \
+        && find $mytmpdir -name '*.fa' | wc -l | xargs echo
+    "
+    assert_equal 50 "${output}"
+
+    rm -fr ${mytmpdir}
+}
+```
+## 可以运行的bash代码④:
+利用`faops split-about`将 ufasta.fa 中的序列按每个 1bp 拆分成多个文件，由于每条序列不会被拆分，所以相当于按序列名拆分  
+```
+cd $HOME/faops/test
+mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+faops split-about ufasta.fa 1 $mytmpdir
+if [ $? -eq 0 ];then         
+   echo "Split successfully"         
+   ls $mytmpdir
+else         
+   echo "Failed"
+fi
+file_count=$(find $mytmpdir -name '*.fa' | wc -l | xargs echo)
+echo "$file_count"
+rm -fr $mytmpdir
+```
+## bats代码⑤:
+```
+@test "split-about: 1 bp even" {
+    mytmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
+
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops split-about -e $BATS_TEST_DIRNAME/ufasta.fa 1 $mytmpdir \
+        && find $mytmpdir -name '*.fa' | wc -l | xargs echo
+    "
+    assert_equal 26 "${output}"
+
+    rm -fr ${mytmpdir}
+}
+```
+## 可以运行的bash代码⑤:
+利用`split-about -e`可以实现均匀拆分，将序列均匀分配到固定数量的文件中（总序列数/2）  
+```
+cd $HOME/faops/test
+mytmpdir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+faops split-about -e ufasta.fa 1 $mytmpdir
 if [ $? -eq 0 ];then         
    echo "Split successfully"         
    ls $mytmpdir
