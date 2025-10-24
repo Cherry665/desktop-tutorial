@@ -1298,3 +1298,92 @@ else
    echo "Failed"
 fi
 ```
+## bats代码③:
+```
+@test "order: compare with some" {
+    exp=$($BATS_TEST_DIRNAME/../faops order $BATS_TEST_DIRNAME/ufasta.fa \
+            <($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa | sort -n -r -k2,2 | cut -f 1) \
+            stdout )
+
+    res=$( for word in $($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa | sort -n -r -k2,2 | cut -f 1); do
+            $BATS_TEST_DIRNAME/../faops some $BATS_TEST_DIRNAME/ufasta.fa <(echo ${word}) stdout
+        done )
+
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码③:
+用`order`和`some`两种方法，结合`size`按序列长度从大到小的顺序提取全部序列  
+`order`可以直接一步提取，而`some`需要借助循环分布提取  
+```
+cd $HOME/faops/test
+exp=$(faops order ufasta.fa <(faops size ufasta.fa | sort -n -r -k2,2 | cut -f 1) stdout )
+echo "$exp"
+list=$(faops size ufasta.fa | sort -n -r -k2,2 | cut -f 1)
+res=""
+for word in $list; do
+    sequence=$(faops some ufasta.fa <(echo $word) stdout)
+    res+="$sequence"$'\n'        
+done
+echo "$res"
+```
+# 13-replace.bats
+## bats代码①:
+```
+@test "replace: inline names" {
+    exp=">428"
+    res=$($BATS_TEST_DIRNAME/../faops replace $BATS_TEST_DIRNAME/ufasta.fa \
+        <(printf "%s\t%s\n" read12 428) stdout \
+        | grep '^>428')
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码①:
+利用`faops replace`对指定序列名进行替换，输出全部序列  
+```
+cd $HOME/faops/test
+exp=">428"    
+res=$(faops replace ufasta.fa <(printf "%s\t%s\n" read12 428) stdout | grep '^>428')
+echo "exp:$exp;res:$res"
+```
+## bats代码②:
+```
+@test "replace: -s" {
+    exp="7"
+    res=$($BATS_TEST_DIRNAME/../faops replace -s $BATS_TEST_DIRNAME/ufasta.fa \
+        <(printf "%s\t%s\n" read12 428) stdout |
+        wc -l |
+        xargs echo)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码②:
+利用`faops replace -s`只输出被替换的指定序列的描述行和序列信息  
+```
+cd $HOME/faops/test
+exp="7"    
+res=$(faops replace -s ufasta.fa <(printf "%s\t%s\n" read12 428) stdout | wc -l | xargs echo)
+echo "exp:$exp;res:$res"
+```
+## bats代码③:
+```
+@test "replace: with replace.tsv" {
+    exp=$(cat $BATS_TEST_DIRNAME/replace.tsv | cut -f 2)
+    res=$($BATS_TEST_DIRNAME/../faops replace $BATS_TEST_DIRNAME/ufasta.fa \
+        $BATS_TEST_DIRNAME/replace.tsv stdout \
+        | grep '^>' | grep -v 'read' | sed 's/>//' )
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码③:
+借助映射文件 replace.tsv ，利用`faops replace`实现同时替换多条序列（只替换 replace.tsv 中提到的序列，其余不变）  
+`grep '^>'`找出所有描述行；`grep -v 'read'`去除所有含有 read 的未被替换的描述行；`sed 's/>//'`去除“>”只保留序列名  
+```
+exp=$(cat replace.tsv | cut -f 2)
+res=$(faops replace ufasta.fa replace.tsv stdout | grep '^>' | grep -v 'read' | sed 's/>//' )
+if [ "$exp" = "$res" ];then   
+   echo "faops_replace replaces sequences name correctly"
+else   
+   echo "Failed"
+fi
+```
