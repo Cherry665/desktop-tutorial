@@ -1113,3 +1113,144 @@ file_count=$(find $mytmpdir -name '*.fa' | wc -l | xargs echo)
 echo "$file_count"
 rm -fr $mytmpdir
 ```
+# 11-n50.bats  
+## bats代码①:
+```
+@test "n50: display header" {
+    run bash -c "$BATS_TEST_DIRNAME/../faops n50 $BATS_TEST_DIRNAME/ufasta.fa"
+    assert_equal "N50${tab}314" "${lines[0]}"
+}
+```
+## 可以运行的bash代码①:
+利用`faops n50`可以计算 fasta 文件的 N50 的值，直接按“N50  N50值”格式输出  
+N50：将所有序列按长度排序后，从长到短进行累计，累计长度达到实际组装总长度50%时的序列长度，值越大说明组装质量越好（长序列越多）  
+```
+cd $HOME/faops/test
+N50=$(faops n50 ufasta.fa)
+echo "$N50"
+```
+## bats代码②:
+```
+@test "n50: don't display header" {
+    run $BATS_TEST_DIRNAME/../faops n50 -H $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | xargs echo "
+    assert_equal "314" "${output}"
+}
+```
+## 可以运行的bash代码②:
+`faops n50 -H`可以直接输出 N50 的值，没有表头  
+```
+cd $HOME/faops/test
+N50=$(faops n50 -H ufasta.fa | xargs echo)
+echo "$N50"
+```
+## bats代码③:
+```
+@test "n50: set genome size (NG50)" {
+    run $BATS_TEST_DIRNAME/../faops n50 -H -g 10000 $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | xargs echo "
+    assert_equal "297" "${output}"
+}
+```
+## 可以运行的bash代码③:
+`faops n50 -H -g 10000`可以根据已知或预计基因组大小（如10000bp），计算 NG50 的值  
+NG50：根据已知或预计基因组大小计算，是 N50 的变体  
+```
+cd $HOME/faops/test
+N50=$(faops n50 -H -g 10000 ufasta.fa | xargs echo)
+echo "$N50"
+```
+## bats代码④:
+```
+@test "n50: sum of size" {
+    run $BATS_TEST_DIRNAME/../faops n50 -H -S $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | xargs echo "
+    assert_equal "314 9317" "${output}"
+}
+```
+## 可以运行的bash代码④:
+利用`faops n50 -H -S`不仅可以计算 N50 的值，还可以计算序列的总长度（size）  
+```
+cd $HOME/faops/test
+res=$(faops n50 -H -S ufasta.fa | xargs echo)
+echo "$res"
+```
+## bats代码⑤:
+```
+@test "n50: sum and average of size" {
+    run $BATS_TEST_DIRNAME/../faops n50 -H -S -A $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | xargs echo "
+    assert_equal "314 9317 186.34" "${output}"
+}
+```
+## 可以运行的bash代码⑤:
+利用`faops n50 -H -S -A`不仅可以计算 N50 的值，还可以计算序列的总长度（size）和平均每条序列的长度（average）  
+```
+cd $HOME/faops/test
+res=$(faops n50 -H -S -A ufasta.fa | xargs echo)
+echo "$res"
+```
+## bats代码⑥:
+```
+@test "n50: E-size" {
+    run $BATS_TEST_DIRNAME/../faops n50 -H -E $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | xargs echo "
+    assert_equal "314 314.70" "${output}"
+}
+```
+## 可以运行的bash代码⑥:
+利用`faops n50 -H -E`不仅可以计算 N50 的值，还可以计算 E-size 的值  
+E-size：是另一个组装质量指标，表示随机选择一个碱基时，它所在序列的期望长度（计算公式：∑(序列长度²) / 总碱基数），强调长序列的贡献，对长序列更敏感  
+```
+cd $HOME/faops/test
+res=$(faops n50 -H -E ufasta.fa | xargs echo)
+echo "$res"
+```
+## bats代码⑦:
+```
+@test "n50: n10" {
+    run $BATS_TEST_DIRNAME/../faops n50 -H -N 10 $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | xargs echo "
+    assert_equal "516" "${output}"
+}
+```
+## 可以运行的bash代码⑦:
+利用`faops n50 -H -N 10`可以计算 N10 的值  
+N10：将所有序列按长度排序后，累计长度达到总长度10%时的序列长度，相比N50更关注最长的那部分序列  
+```
+cd $HOME/faops/test
+res=$(faops n50 -H -N 10 ufasta.fa | xargs echo)
+echo "$res"
+```
+## bats代码⑧:
+```
+@test "n50: n90 with header" {
+    run $BATS_TEST_DIRNAME/../faops n50 -N 90 $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | xargs echo "
+    assert_equal "N90 112" "${output}"
+}
+```
+## 可以运行的bash代码⑧:
+利用`faops n50 -N 90`可以计算 N90 的值，显示表头  
+N90：将所有序列按长度排序后，累计长度达到总长度90%时的序列长度，反映较短序列的长度特征  
+```
+cd $HOME/faops/test
+res=$(faops n50 -N 90 ufasta.fa | xargs echo)
+echo "$res"
+```
+## bats代码⑨:
+```
+@test "n50: only count of sequences" {
+    run $BATS_TEST_DIRNAME/../faops n50 -N 0 -C $BATS_TEST_DIRNAME/ufasta.fa
+    run bash -c "echo \"${output}\" | xargs echo "
+    assert_equal "C 50" "${output}"
+}
+```
+## 可以运行的bash代码⑨:
+`faops n50 -N 0 -C`中`-N 0`表示不进行N统计计算，`-C` 只统计序列的数量  
+```
+cd $HOME/faops/test
+res=$(faops n50 -N 0 -C ufasta.fa | xargs echo)
+echo "$res"
+```
+# 12-order.bats
