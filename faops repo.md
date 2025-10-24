@@ -1254,3 +1254,47 @@ res=$(faops n50 -N 0 -C ufasta.fa | xargs echo)
 echo "$res"
 ```
 # 12-order.bats
+## bats代码①:
+```
+@test "order: inline names" {
+    exp=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep -A 1 '^>read12')
+    res=$($BATS_TEST_DIRNAME/../faops order -l 0 $BATS_TEST_DIRNAME/ufasta.fa <(echo read12) stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码①:
+利用`faops order -l 0`提取 fasta 文件中的指定序列  
+```
+cd $HOME/faops/test
+exp=$(faops filter -l 0 ufasta.fa stdout | grep -A 1 '^>read12')
+res=$(faops order -l 0 ufasta.fa <(echo read12) stdout)
+if [ "$exp" = "$res" ];then
+   echo "faops_order extracts sequence correctly"
+else
+   echo "Failed"
+fi
+```
+## bats代码②:
+```
+@test "order: correct orders" {
+    exp=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep -A 1 '^>read12')
+    exp+=$'\n'
+    exp+=$($BATS_TEST_DIRNAME/../faops filter -l 0 $BATS_TEST_DIRNAME/ufasta.fa stdout | grep -A 1 '^>read5')
+    res=$($BATS_TEST_DIRNAME/../faops order -l 0 $BATS_TEST_DIRNAME/ufasta.fa <(echo read12 read5) stdout)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码②:
+利用`faops order -l 0`加`<(echo read12 read5)`可以按指定顺序提取相应序列（如先 read12 后 read5）  
+```
+cd $HOME/faops/test
+exp=$(faops filter -l 0 ufasta.fa stdout | grep -A 1 '^>read12')    
+exp+=$'\n'    
+exp+=$(faops filter -l 0 ufasta.fa stdout | grep -A 1 '^>read5')    
+res=$(faops order -l 0 ufasta.fa <(echo read12 read5) stdout)
+if [ "$exp" = "$res" ];then
+   echo "faops_order extracts sequences correctly"
+else
+   echo "Failed"
+fi
+```
