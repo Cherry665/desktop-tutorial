@@ -1454,9 +1454,12 @@ echo "res:$res"
 ```
 ## 可以运行的bash代码①:
 `faops interleave`可以交错合并两个文件，总序列数会翻倍  
-输出为：>read1/1 序列信息  
-       >read1/2 序列信息  
-       ......  
+输出为：  
+>read1/1  
+序列信息  
+>read1/2  
+序列信息  
+......  
 ```
 cd $HOME/faops/test
 exp=$(faops size ufasta.fa | grep "\s0" | wc -l | xargs echo)    
@@ -1474,9 +1477,12 @@ echo "res:$res"
 ```
 ## 可以运行的bash代码②:
 `faops interleave`可以交错合并两个文件，当只有一个文件时，会输出N  
-输出为：>read1/1 序列信息  
-       >read1/2 N  
-       ......  
+输出为：  
+>read1/1  
+序列信息  
+>read1/2  
+>N  
+......  
 ```
 cd $HOME/faops/test
 exp=$(faops size ufasta.fa | grep "\s0" | wc -l | xargs echo)    
@@ -1496,8 +1502,38 @@ echo "res:$res"
 }
 ```
 ## 可以运行的bash代码③:
-
+利用`faops interleave -q`交错合并两个 fastq 文件  
+输出为：  
+@read1/1  
+序列及质量信息  
+@read1/2  
+序列及质量信息  
+......  
+合并后不会产生无效的质量值，即包含单个感叹号 ! 的行  
 ```
 cd $HOME/faops/test
 faops interleave -q R1.fq.gz R2.fq.gz | grep '^!$' | wc -l
+```
+## bats代码④:
+```
+@test "interleave: fq (single)" {
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops interleave -q $BATS_TEST_DIRNAME/R1.fq.gz |
+            grep '^!$' |
+            wc -l
+    "
+    assert_equal 25 "${output}"
+}
+```
+## 可以运行的bash代码④:
+利用`faops interleave -q`交错合并两个 fastq 文件,当只有一个文件时,系列质量会输出 !  
+输出为：  
+@read1/1  
+序列及质量信息  
+@read1/2  
+N及!  
+......  
+```
+cd $HOME/faops/test
+faops interleave -q R1.fq.gz | grep '^!$' | wc -l
 ```
