@@ -1379,6 +1379,7 @@ echo "exp:$exp;res:$res"
 借助映射文件 replace.tsv ，利用`faops replace`实现同时替换多条序列（只替换 replace.tsv 中提到的序列，其余不变）  
 `grep '^>'`找出所有描述行；`grep -v 'read'`去除所有含有 read 的未被替换的描述行；`sed 's/>//'`去除“>”只保留序列名  
 ```
+cd $HOME/faops/test
 exp=$(cat replace.tsv | cut -f 2)
 res=$(faops replace ufasta.fa replace.tsv stdout | grep '^>' | grep -v 'read' | sed 's/>//' )
 if [ "$exp" = "$res" ];then   
@@ -1386,4 +1387,101 @@ if [ "$exp" = "$res" ];then
 else   
    echo "Failed"
 fi
+```
+# 14-dazz.bats
+## bats代码①:
+```
+@test "dazz: empty seqs count" {
+    exp=$($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa | grep "\s0" | wc -l | xargs echo)
+    res=$($BATS_TEST_DIRNAME/../faops dazz -a $BATS_TEST_DIRNAME/ufasta.fa stdout | grep "0_0" | wc -l | xargs echo)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码①:
+利用`faops size`和`faops dazz`都可以计算序列长度为 0 的序列的数量  
+`faops size`可以输出序列名+序列长度，`grep "\s0"`中 \s 可以匹配空白字符（空格、制表符等），grep "\s0" 可以匹配“空白字符+0”，即序列长度为 0 的行  
+`faops dazz -a ufasta.fa stdout`后描述行会以 “>read/x/0_y” 格式输出（序列信息也会输出），x 为序列的序数（即文件中的第几个序列），y 为序列的长度，“0_0”表示序列长度为 0  
+```
+cd $HOME/faops/test
+exp=$(faops size ufasta.fa | grep "\s0" | wc -l | xargs echo)    
+res=$(faops dazz -a ufasta.fa stdout | grep "0_0" | wc -l | xargs echo)
+echo "exp:$exp"
+echo "res:$res"
+```
+## bats代码②:
+```
+@test "dazz: deduplicate seqs" {
+    exp=$($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa $BATS_TEST_DIRNAME/ufasta.fa.gz | grep "\s0" | wc -l | xargs echo)
+    res=$(gzip -d -c -f $BATS_TEST_DIRNAME/ufasta.fa $BATS_TEST_DIRNAME/ufasta.fa.gz | $BATS_TEST_DIRNAME/../faops dazz stdin stdout | grep "0_0" | wc -l | xargs echo)
+    assert_equal "$(($exp / 2))" "$res"
+}
+```
+## 可以运行的bash代码②:
+`faops dazz`可以去重序列  
+`gzip -d -c -f`中 -d 表示解压缩；-c 表示写到标准输出； -f 表示强制执行  
+```
+cd $HOME/faops/test
+exp=$(faops size ufasta.fa ufasta.fa.gz | grep "\s0" | wc -l | xargs echo)    
+res=$(gzip -d -c -f ufasta.fa ufasta.fa.gz | faops dazz stdin stdout | grep "0_0" | wc -l | xargs echo)
+echo "exp:$(($exp / 2))"
+echo "res:$res"
+```
+## bats代码③:
+```
+@test "dazz: duplicated seqs" {
+    exp=$($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa $BATS_TEST_DIRNAME/ufasta.fa.gz | grep "\s0" | wc -l | xargs echo)
+    res=$(gzip -d -c -f $BATS_TEST_DIRNAME/ufasta.fa $BATS_TEST_DIRNAME/ufasta.fa.gz | $BATS_TEST_DIRNAME/../faops dazz -a stdin stdout | grep "0_0" | wc -l | xargs echo)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码③:
+`faops dazz -a`不会进行去重，会保留所有的序列信息  
+```
+cd $HOME/faops/test
+exp=$(faops size ufasta.fa ufasta.fa.gz | grep "\s0" | wc -l | xargs echo) 
+res=$(gzip -d -c -f ufasta.fa ufasta.fa.gz | faops dazz -a stdin stdout | grep "0_0" | wc -l | xargs echo)
+echo "exp:$exp"
+echo "res:$res"
+```
+# 15-interleave.bats
+## bats代码①:
+```
+@test "interleave: empty seqs count" {
+    exp=$($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa | grep "\s0" | wc -l | xargs echo)
+    res=$($BATS_TEST_DIRNAME/../faops interleave $BATS_TEST_DIRNAME/ufasta.fa $BATS_TEST_DIRNAME/ufasta.fa.gz | grep "^$" | wc -l | xargs echo)
+    assert_equal "$(($exp * 2))" "$res"
+}
+```
+## 可以运行的bash代码①:
+`faops interleave`可以交错合并两个文件，总序列数会翻倍  
+输出为：>read1/1 序列信息  
+       >read1/2 序列信息  
+       ......  
+```
+cd $HOME/faops/test
+exp=$(faops size ufasta.fa | grep "\s0" | wc -l | xargs echo)    
+res=$(faops interleave ufasta.fa ufasta.fa.gz | grep "^$" | wc -l | xargs echo)
+echo "exp:$(($exp * 2))"
+echo "res:$res"
+```
+## bats代码②:
+```
+@test "interleave: empty seqs count (single)" {
+    exp=$($BATS_TEST_DIRNAME/../faops size $BATS_TEST_DIRNAME/ufasta.fa | grep "\s0" | wc -l | xargs echo)
+    res=$($BATS_TEST_DIRNAME/../faops interleave $BATS_TEST_DIRNAME/ufasta.fa | grep "^$" | wc -l | xargs echo)
+    assert_equal "$exp" "$res"
+}
+
+```
+## 可以运行的bash代码②:
+`faops interleave`可以交错合并两个文件，当只有一个文件时，会输出N  
+输出为：>read1/1 序列信息  
+       >read1/2 N  
+       ......  
+```
+cd $HOME/faops/test
+exp=$(faops size ufasta.fa | grep "\s0" | wc -l | xargs echo)    
+res=$(faops interleave ufasta.fa | grep "^$" | wc -l | xargs echo)
+echo "exp:$exp"
+echo "res:$res"
 ```
