@@ -1471,7 +1471,6 @@ echo "res:$res"
     res=$($BATS_TEST_DIRNAME/../faops interleave $BATS_TEST_DIRNAME/ufasta.fa | grep "^$" | wc -l | xargs echo)
     assert_equal "$exp" "$res"
 }
-
 ```
 ## 可以运行的bash代码②:
 `faops interleave`可以交错合并两个文件，当只有一个文件时，会输出N  
@@ -1484,4 +1483,21 @@ exp=$(faops size ufasta.fa | grep "\s0" | wc -l | xargs echo)
 res=$(faops interleave ufasta.fa | grep "^$" | wc -l | xargs echo)
 echo "exp:$exp"
 echo "res:$res"
+```
+## bats代码③:
+```
+@test "interleave: fq" {
+    run bash -c "
+        $BATS_TEST_DIRNAME/../faops interleave -q $BATS_TEST_DIRNAME/R1.fq.gz $BATS_TEST_DIRNAME/R2.fq.gz |
+            grep '^!$' |
+            wc -l
+    "
+    assert_equal 0 "${output}"
+}
+```
+## 可以运行的bash代码③:
+
+```
+cd $HOME/faops/test
+faops interleave -q R1.fq.gz R2.fq.gz | grep '^!$' | wc -l
 ```
