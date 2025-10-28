@@ -1537,3 +1537,85 @@ N及!
 cd $HOME/faops/test
 faops interleave -q R1.fq.gz | grep '^!$' | wc -l
 ```
+# 16-region.bats
+## bats代码①:
+```
+@test "region: from file" {
+    exp=$(cat $BATS_TEST_DIRNAME/region.txt | wc -l | xargs echo)
+    res=$($BATS_TEST_DIRNAME/../faops region -l 0 $BATS_TEST_DIRNAME/ufasta.fa $BATS_TEST_DIRNAME/region.txt stdout | wc -l | xargs echo)
+    assert_equal "$(($exp * 2))" "$res"
+}
+```
+## 可以运行的bash代码①:
+借助 region.txt 文件可以从 ufasta.fa 文件中提取指定序列的指定位置的碱基  
+如：region.txt 中的内容为  
+read0:1-10  
+read12:50-60  
+利用`faops region -l 0`可以提取 read0 的第 1-10 个碱基、read12 的第 50-60 个碱基  
+输出为  
+>read0:1-10  
+tCGTTTAACC  
+>read12:50-60  
+TtgTgtcACag  
+```
+cd $HOME/faops/test
+exp=$(cat region.txt | wc -l | xargs echo)    
+res=$(faops region -l 0 ufasta.fa region.txt stdout | wc -l | xargs echo)
+echo "exp:$(($exp * 2))"
+echo "res:$res"
+```
+## bats代码②:
+```
+@test "region: frag" {
+    exp=$($BATS_TEST_DIRNAME/../faops frag $BATS_TEST_DIRNAME/ufasta.fa 1 10 stdout)
+    res=$($BATS_TEST_DIRNAME/../faops region -l 0 $BATS_TEST_DIRNAME/ufasta.fa <(echo read0:1-10) stdout)
+    assert_equal "${exp}" "${res}"
+}
+```
+## 可以运行的bash代码②:
+利用`faops region -l 0`和`faops frag`都可以提取一条序列的指定位置的碱基  
+```
+cd $HOME/faops/test
+exp=$(faops frag ufasta.fa 1 10 stdout)    
+res=$(faops region -l 0 ufasta.fa <(echo read0:1-10) stdout)
+echo "exp:$exp"
+echo "res:$res"
+```
+## bats代码③:
+```
+@test "region: 1 base" {
+    exp=$($BATS_TEST_DIRNAME/../faops frag $BATS_TEST_DIRNAME/ufasta.fa 10 10 stdout)
+    res=$($BATS_TEST_DIRNAME/../faops region -l 0 $BATS_TEST_DIRNAME/ufasta.fa <(echo read0:10) stdout)
+    assert_equal "${exp}" "${res}"
+}
+```
+## 可以运行的bash代码③:
+利用`faops region -l 0`和`faops frag`都可以提取一条序列的指定位置的 1 个碱基  
+```
+cd $HOME/faops/test
+exp=$(faops frag ufasta.fa 10 10 stdout)    
+res=$(faops region -l 0 ufasta.fa <(echo read0:10) stdout)
+echo "exp:$exp"
+echo "res:$res"
+```
+## bats代码④:
+```
+@test "region: strand" {
+    exp=$(echo -e ">read0(+):10\nC")
+    res=$($BATS_TEST_DIRNAME/../faops region -s -l 0 $BATS_TEST_DIRNAME/ufasta.fa <(echo read0:10) stdout)
+    assert_equal "${exp}" "${res}"
+}
+```
+## 可以运行的bash代码④:
+利用`faops region -s -l 0`可以提取一条序列的指定位置的碱基，`-s`启用链向处理，提取正链序列  
+输出为  
+>read0(+):10  
+C  
+```
+cd $HOME/faops/test
+exp=$(echo -e ">read0(+):10\nC")    
+res=$(faops region -s -l 0 ufasta.fa <(echo read0:10) stdout)
+echo "exp:$exp"
+echo "res:$res"
+```
+## bats代码⑤:
