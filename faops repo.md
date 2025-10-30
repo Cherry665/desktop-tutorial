@@ -1619,3 +1619,59 @@ echo "exp:$exp"
 echo "res:$res"
 ```
 ## bats代码⑤:
+```
+@test "region: regions" {
+    exp=4
+    res=$($BATS_TEST_DIRNAME/../faops region -l 0 $BATS_TEST_DIRNAME/ufasta.fa <(echo read1:1-10,50-60) stdout | wc -l | xargs echo)
+    assert_equal "${exp}" "${res}"
+}
+```
+## 可以运行的bash代码④:
+利用`faops region -l 0`可以同时提取一条序列的不同位置的碱基  
+输出为  
+>read1:1-10  
+taGGCGcGGg  
+>read1:50-60  
+TacgtaACatc  
+```
+cd $HOME/faops/test
+exp=4    
+res=$(faops region -l 0 ufasta.fa <(echo read1:1-10,50-60) stdout | wc -l | xargs echo)
+echo "exp:$exp"
+echo "res:$res"
+```
+# 17-masked.bats
+## bats代码①:
+```
+@test "masked 1" {
+    exp="read46:3-4"
+    res=$($BATS_TEST_DIRNAME/../faops masked $BATS_TEST_DIRNAME/ufasta.fa | grep '^read46' | head -n 1)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码①:
+利用`faops masked`可以显示所有序列所有被 masked 的位置（小写字母）  
+```
+cd $HOME/faops/test
+exp="read46:3-4"
+res=$(faops masked ufasta.fa | grep '^read46' | head -n 1)
+echo "exp:$exp"
+echo "res:$res"
+```
+## bats代码②:
+```
+@test "masked 2" {
+    exp="read0:1"
+    res=$($BATS_TEST_DIRNAME/../faops masked $BATS_TEST_DIRNAME/ufasta.fa | grep '^read0' | head -n 1)
+    assert_equal "$exp" "$res"
+}
+```
+## 可以运行的bash代码②:
+利用`faops masked`可以显示所有序列所有被 masked 的位置（小写字母），同 ①  
+```
+cd $HOME/faops/test
+exp="read0:1"    
+res=$(faops masked ufasta.fa | grep '^read0' | head -n 1)
+echo "exp:$exp"
+echo "res:$res"
+```
